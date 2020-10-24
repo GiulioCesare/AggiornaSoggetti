@@ -1,0 +1,9 @@
+
+.project
+.settings/CVS/Entries
+.settings/CVS/Repository
+.settings/CVS/Root
+CVS
+*.class
+*.log
+
