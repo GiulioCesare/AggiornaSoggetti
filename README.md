@@ -1,0 +1,2 @@
+# AggiornaSoggetti
+Aggiorna soggetti SBN
