@@ -26,8 +26,9 @@ import java.util.Map;
 
 import it.finsiel.misc.Misc;
 
-
 public class InserisciLegamiTitoloSoggettoJdbc {
+
+
 
 /*
  Controlli sulle priorita' di inserimento legame tra polo operante ed ute_var del legame esistente (DB)
@@ -119,7 +120,7 @@ IEI1010
 
 	int legamiInseriti = 0;
 	int legamiNonInseriti = 0;
-	int legamiAggiornati = 0;
+//	int legamiAggiornati = 0;
 	int titoli_da_legare=0;
 	int cancellaTuttiILegami=0;
 	
@@ -256,21 +257,21 @@ private static byte[] trim(byte[] ba, int len) {
 */
 
 
-private void caricaGerarchieVecchie()
-{
-	prioritaMap.put("CFI", 90);
-	prioritaMap.put("MIL", 85);
-	prioritaMap.put("RAV", 80);
-	prioritaMap.put("LO1", 70);
-	prioritaMap.put("BVE", 60);
-	prioritaMap.put("VEA", 50);
-	prioritaMap.put("PUV", 40);
-	prioritaMap.put("UFI", 30);
-	prioritaMap.put("UBO", 25);
-	prioritaMap.put("NAP", 20);
-	prioritaMap.put("IEI", 10);
-	
-}
+//private void caricaGerarchieVecchie()
+//{
+//	prioritaMap.put("CFI", 90);
+//	prioritaMap.put("MIL", 85);
+//	prioritaMap.put("RAV", 80);
+//	prioritaMap.put("LO1", 70);
+//	prioritaMap.put("BVE", 60);
+//	prioritaMap.put("VEA", 50);
+//	prioritaMap.put("PUV", 40);
+//	prioritaMap.put("UFI", 30);
+//	prioritaMap.put("UBO", 25);
+//	prioritaMap.put("NAP", 20);
+//	prioritaMap.put("IEI", 10);
+//	
+//}
 
 
 private void caricaGerarchieNuove()
@@ -398,8 +399,8 @@ public static void main(String args[])
 					else if (ar[0].startsWith("tr_tit_sog_rel"))
 						InserisciLegamiTitoloSoggettoJdbc.tr_tit_sog_rel = ar[1];
 					
-else if (ar[0].startsWith("tb_gerarchia_soggetti"))
-	InserisciLegamiTitoloSoggettoJdbc.tb_gerarchia_soggetti = ar[1];
+					else if (ar[0].startsWith("tb_gerarchia_soggetti"))
+						InserisciLegamiTitoloSoggettoJdbc.tb_gerarchia_soggetti = ar[1];
 					
 					else if (ar[0].startsWith("poloStr"))
 						InserisciLegamiTitoloSoggettoJdbc.poloStr = ar[1];
@@ -520,7 +521,7 @@ else if (ar[0].startsWith("tb_gerarchia_soggetti"))
 //private void inserisciLegame(Statement stmt, String ute_ins_polo_operante, String ute_var_polo_operante, String bid, String cid)
 //private void inserisciLegame(Statement stmt, String ute_ins_polo_operante, String ute_var_polo_operante, String ute_var_DB, String bid, String cid)
 private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
-		int priorita_polo_operante, int priorita_polo_db,
+		// int priorita_polo_operante, int priorita_polo_db,
 		String ute_var_polo_operante, String ute_var_DB, String bid, String cid)
 {
 	
@@ -533,29 +534,47 @@ private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
 	
 //	if (!ute_ins_polo_operante.equals(ute_var_polo_operante)) // 05/04/2018 
 //	if (!ute_var_POLO.equals(ute_var_DB)) // 06/04/2018 
-	if (priorita_polo_operante >= priorita_polo_db &&  !ute_var_POLO.equals(ute_var_DB)) // 06/04/2018 
-	{ // Se priotita' >= del polo_bib operante rispetto al polo_bib sul db e 
-	  // polo operante diverso da quello su DB cancella tutti i legami e reinserisci i propri
 
+	// if (priorita_polo_operante >= priorita_polo_db &&  !ute_var_POLO.equals(ute_var_DB)) // 06/04/2018
+	// { // Se priotita' >= del polo_bib operante rispetto al polo_bib sul db e
+
+	  // polo operante diverso da quello su DB cancella tutti i legami e reinserisci i propri
+		if (! ute_var_polo_operante.substring(0,6).equals(ute_var_DB)) // 26/02/21
+		{
 		// CANCELLIAMO LOGICAMENTE TUTTI I LEGAMI TITOLO-SOGGETTI
 		// ------------------------------------------------------
 		String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'S', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"'";
 		stmt.execute(updateStr);
 		int rowsAffected = stmt.getUpdateCount();
 		cancellaTuttiILegami++;
-//System.out.println("Legami cancellati logicamente="+rowsAffected);
-		
-	}
+        System.out.println("Cancello tutti i legami ("+rowsAffected+") titolo soggetto per polo operante: "+ute_var_polo_operante.substring(0, 6)+" diverso da polo DB: "+ute_var_DB);
+		}
+		//System.out.println("Legami cancellati logicamente="+rowsAffected);
+	// }
 		
 	
 	
 	// Proviamo ad INSERIRE il legame	
 	String insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
 
-	boolean retB =  stmt.execute(insertStr);
-	if (retB == true)
-//		sqlExecutedOk.add(insertStr);
-		legamiInseriti++;
+//	boolean retB =  stmt.execute(insertStr);
+//	if (retB == true)
+//	{
+//		System.out.println("Inserito legame: "+bid+"->"+cid);
+//		legamiInseriti++;
+//	}
+//	else
+//	{
+//		System.out.println("Inserito legame retB=FALSE: "+bid+"->"+cid);
+//		legamiInseriti++;
+//		
+//	}
+	
+	stmt.execute(insertStr);
+	System.out.println("Inserito legame: "+bid+"->"+cid);
+	legamiInseriti++;
+	
+	
 //stmt.execute("COMMIT");									
 	}
 	catch (Exception e) {
@@ -563,17 +582,19 @@ private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
 		// RIPRISTINO IL LEGAME
 		String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'" ;
 		try {
-			boolean retB =  stmt.execute(updateStr);
+			stmt.execute(updateStr);
+			System.out.println("Inserito legame per ripristino: "+bid+"->"+cid);
+			legamiInseriti++;
+			
 		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			System.out.println("Errore in inserimento legame per ripristino: "+bid+"->"+cid);
+			legamiNonInseriti++;
 		}
 //stmt.execute("COMMIT");										
-		legamiInseriti++;
 	}
 }
 
-
+	
 @SuppressWarnings("unused")
 public void doInserisciLegami() 
 {
@@ -617,6 +638,8 @@ public void doInserisciLegami()
 				legami = in.readLine();
 				rowCtr++;
 
+
+
 				if (rowCtr < iniziaElaborazioneDaRiga)
 					continue;
 				
@@ -639,6 +662,9 @@ public void doInserisciLegami()
 				for (int i=1; i < legamiAR.length; i++)
 				{
 					titoli_da_legare++;
+					 System.out.println("Da legare: "+cid+"->"+legamiAR[i]);
+
+					
 					
 					String bidPoloBibAR[] = legamiAR[i].split(",");
 					bid = bidPoloBibAR[0];
@@ -652,20 +678,22 @@ public void doInserisciLegami()
 
 					// Polo operante
 					Integer prioritaPoloOp = prioritaMap.get(cdPoloBibliotecaStr); // cdPoloOperante 
-					if ( prioritaPoloOp == null)
-						prioritaPoloOp = prioritaMap.get(cdPoloAltreBibStr); 
+
+					// if ( prioritaPoloOp == null)
+						// prioritaPoloOp = prioritaMap.get(cdPoloAltreBibStr);
 					
-					if ( prioritaPoloOp == null)
-					{
-						System.out.println(bid+"->"+cid+" - Polo/Biblioteca operante ("+cdPoloBibliotecaStr+"/"+cdPoloAltreBibStr+") non dichiarato nella gerarchia");
-						continue;
-					}
+					// if ( prioritaPoloOp == null)
+					// {
+						// System.out.println(bid+"->"+cid+" - Polo/Biblioteca operante ("+cdPoloBibliotecaStr+") non dichiarato nella gerarchia");
+						// continue;
+					// }
 					
 					// 08/10/2019 Controlliamo che il titolo non sia stato cancellato
 					ResultSet rs = stmt.executeQuery("select bid from tb_titolo where bid='"+bid+"' and fl_canc != 'S'" );
 					if(!rs.next())
 					{
-						System.out.println("Il bid "+bid+" non esiste od e' stato cancellato nella tabella dei titoli");
+						System.out.println("Errore in inserimento legame: "+bid+"->"+cid+" non esiste nella tabella dei titoli");
+						legamiNonInseriti++;
 						continue;
 					}
 					
@@ -681,42 +709,64 @@ public void doInserisciLegami()
 						
 //						String polo_DB = rs.getString(1).substring(0, 3); // 15/06/2017 gestione polo biblioteca ancora non attiva in indice
 						String ute_var_DB = rs.getString(1).substring(0, 6); // 15/06/2017 gestione polo biblioteca ancora non attiva in indice
+
 						Integer prioritaPoloDb = prioritaMap.get(ute_var_DB); // Polo db e' soggettatore? 
 
-//System.out.println("ute_var_DB="+ute_var_DB+", prioritaPoloDb="+prioritaPoloDb);						
+// System.out.println("prioritaPoloDb="+prioritaPoloDb);
+
+// System.out.println("ute_var_DB="+ute_var_DB);
+
+// , prioritaPoloDb="+prioritaPoloDb);
 						
 						if ( prioritaPoloDb == null)
-							prioritaPoloDb = prioritaMap.get(ute_var_DB.substring(0, 3)+" **"); 
-//System.out.println("ute_var_DB="+ute_var_DB+", prioritaPoloDb="+prioritaPoloDb);						
-						
-						// { 19/04/2018 cerchiamo la priorita' + alta
-						String ute_var_DB_max = ute_var_DB;
-						Integer prioritaPoloDbMax = prioritaPoloDb;	
-						while (rs.next())
 						{
-							ute_var_DB = rs.getString(1).substring(0, 6); // 15/06/2017 gestione polo biblioteca ancora non attiva in indice
-							prioritaPoloDb = prioritaMap.get(ute_var_DB); // Polo db e' soggettatore? 
-							if ( prioritaPoloDb == null)
-								prioritaPoloDb = prioritaMap.get(ute_var_DB.substring(0, 3)+" **");
+// System.out.println("ute_var_DB="+ute_var_DB + "Check **");
+// System.out.println("prioritaPoloDb="+prioritaPoloDb);
+
+							prioritaPoloDb = prioritaMap.get(ute_var_DB.substring(0, 3)+" **");
 							
-							if (prioritaPoloDb != null )
-							{
-								if (prioritaPoloDbMax != null && prioritaPoloDb > prioritaPoloDbMax)
-								{
-									ute_var_DB_max = ute_var_DB;
-									prioritaPoloDbMax = prioritaPoloDb;	
-								}
-								else
-								{
-									ute_var_DB_max = ute_var_DB;
-									prioritaPoloDbMax = prioritaPoloDb;	
-								}
-								
-							}
+// System.out.println("prioritaPoloDb="+prioritaPoloDb);
 							
 						}
-						ute_var_DB = ute_var_DB_max;
-						prioritaPoloDb = prioritaPoloDbMax;	
+
+						if (prioritaPoloOp != null && prioritaPoloDb != null)
+						{
+
+							// if (prioritaPoloDb != null)
+							// {
+								// { 19/04/2018 cerchiamo la priorita' + alta
+								String ute_var_DB_max = ute_var_DB;
+								Integer prioritaPoloDbMax = prioritaPoloDb;	
+								while (rs.next())
+								{
+									// ute_var_DB = rs.getString(1).substring(0, 6); // 15/06/2017 gestione polo biblioteca ancora non attiva in indice
+									// prioritaPoloDb = prioritaMap.get(ute_var_DB); // Polo db e' soggettatore?
+									// if ( prioritaPoloDb == null)
+										// prioritaPoloDb = prioritaMap.get(ute_var_DB.substring(0, 3)+" **");
+									
+									// if (prioritaPoloDb != null )
+									// {
+										if (prioritaPoloDbMax != null && prioritaPoloDb > prioritaPoloDbMax)
+										{
+											ute_var_DB_max = ute_var_DB;
+											prioritaPoloDbMax = prioritaPoloDb;	
+										}
+										else
+										{
+											ute_var_DB_max = ute_var_DB;
+											prioritaPoloDbMax = prioritaPoloDb;	
+										}
+										
+									// }
+									
+								}
+								ute_var_DB = ute_var_DB_max;
+								prioritaPoloDb = prioritaPoloDbMax;	
+
+// System.out.println(bid+"->"+cid+" - GERARCHIA + ALTA=prioritaPoloDb " + prioritaPoloDb);
+
+							// }
+						}
 						// }
 						
 						
@@ -730,12 +780,16 @@ public void doInserisciLegami()
 							{ // Polo operante SOGGETTATORE e polo db NON soggettatore    
 								if (!ute_var_DB.equals("XXX"))
 								{ // Inserisci
-								prioritaPoloDb=0; // non soggettatore	
-								inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);									
-								}
+									prioritaPoloDb=0; // non soggettatore	
+									// inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);
+									inserisciLegame(stmt, ute_ins_polo_operante, ute_var_polo_operante, ute_var_DB, bid, cid);									
+// System.out.println(bid+"->"+cid+" - INSERISCI LEGAME");
+
+									}
 								else
 								{
-									System.out.println(bid+"->"+cid+" - Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
+//									System.out.println(bid+"->"+cid+" - @@@@ Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
+									System.out.println("Errore in inserimento legame: "+bid+"->"+cid+" - @@@@ Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
 									legamiNonInseriti++;
 								}
 							}
@@ -744,42 +798,44 @@ public void doInserisciLegami()
 								// I due poli sono soggettatori 
 								if (prioritaPoloOp < prioritaPoloDb)
 									{ // priorita polo operante < priorita polo db   
-										System.out.println(bid+"->"+cid+" - Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
+										System.out.println("Errore in inserimento legame: "+bid+"->"+cid+" -##### Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
 										legamiNonInseriti++;
 									}
 								else
 									{ // priorita polo operante >= priorita polo db
-									inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);									
+									// inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);
+									inserisciLegame(stmt, ute_ins_polo_operante, ute_var_polo_operante, ute_var_DB, bid, cid);									
 									}
 								}
 							}
 						else
 							{ // Polo operante NON e' SOGGETTATORE
 
-							// se ute var db e' soggettatore non si puo' modiifcare
+							// se ute var db e' soggettatore non si puo' modificare
 							if (prioritaPoloDb != null)
 							{ // Polo operante NON SOGGETTATORE e polo db SOGGETTATORE    
-									System.out.println(bid+"->"+cid+" - Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
+									System.out.println("Errore in inserimento legame: "+bid+"->"+cid+" -$$$$  Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
 									legamiNonInseriti++;
 
 							}
 							else
-							{
+							{	// POLO/BIB OPERANTE E POLO/BIB DB NON SOGGETTATORI
 								// ute var db  non e' soggettatore. Se sono diversi non si puo modificare 
 //								if (!cdPoloOperante.equals(polo_DB))
 								if (!cdPoloBibliotecaStr.equals(ute_var_DB))
 								{ // Polo operante NON uguale a polo in DB    
-									System.out.println(bid+"->"+cid+" - Priorita' del polo/bib operante ("+cdPoloBibliotecaStr+") e' inferiore al polo/bib sul DB ("+ute_var_DB+")");
+									System.out.println("Errore in inserimento legame: "+bid+"->"+cid+" polo/bib operante ("+cdPoloBibliotecaStr+") non soggettatore e diverso da  polo/bib sul DB ("+ute_var_DB+")");
 									legamiNonInseriti++;
 								}
 								else
 								{
 									prioritaPoloDb=0; // non soggettatore
-									inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);
+									// inserisciLegame(stmt, ute_ins_polo_operante, prioritaPoloOp, prioritaPoloDb, ute_var_polo_operante, ute_var_DB, bid, cid);
+									inserisciLegame(stmt, ute_ins_polo_operante, ute_var_polo_operante, ute_var_DB, bid, cid);
 								}
 								
 							}
-							}
+						}
 						
 					}
 					else
@@ -789,18 +845,36 @@ public void doInserisciLegami()
 							// INSERIAMO il primo legame	
 							String insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
 	
-							boolean retB =  stmt.execute(insertStr);
-							if (retB == true)
-//							sqlExecutedOk.add(insertStr);
-								legamiInseriti++;
+//							boolean retB =  stmt.execute(insertStr);
+//							if (retB == true)
+//							{
+//								System.out.println("Inserito il primo legame: " +bid+"->"+cid);
+//								legamiInseriti++;
+//							}
+//							else
+//							{
+//								System.out.println("Inserito il primo legame retB=FALSE: " +bid+"->"+cid);
+//								legamiInseriti++;
+//							}
+							stmt.execute(insertStr);
+							System.out.println("Inserito il primo legame " +bid+"->"+cid);
+							legamiInseriti++;
+								
 						}
 						catch (Exception e) {
 							// Legame cancellato logicamente.
 							// Ripristino il legame
 							String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'";
-							boolean retB =  stmt.execute(updateStr);
-							legamiInseriti++;
-
+							try {
+//								boolean retB =  stmt.execute(updateStr);
+								stmt.execute(updateStr);
+								System.out.println("Inserito il primo legame per update: " +bid+"->"+cid);
+								legamiInseriti++;
+								
+							} catch (SQLException e1) {
+								System.out.println("Errore in inserimento " +bid+"->"+cid+" RIPRISTINO primo legame fallito");
+								legamiNonInseriti++;
+							}
 						}
 						
 //stmt.execute("COMMIT");
@@ -838,7 +912,7 @@ System.out.println("Committato a " + righeElaborate + " Righe elaborate");
 		System.out.println("Righe lette: " + rowCtr );
 		System.out.println("Righe righeElaborate: " + righeElaborate);
 		System.out.println("Titoli da legare: " +titoli_da_legare );
-		System.out.println("Legami aggiornati: " +legamiAggiornati );
+//		System.out.println("Legami aggiornati: " +legamiAggiornati );
 		System.out.println("Legami inseriti: " +legamiInseriti );
 		System.out.println("Legami NON inseriti: " +legamiNonInseriti );
 		System.out.println("Volte che sono stati cancellati tutti i legami: " + cancellaTuttiILegami);
@@ -861,4 +935,4 @@ System.out.println("Committato a " + righeElaborate + " Righe elaborate");
 } // End doRimuovi
 
 
-} // End 
+} // End 	
