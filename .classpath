@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="lib/commons-logging-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.10.jar"/>
 	<classpathentry kind="lib" path="lib/classes12.jar"/>
+	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.36.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

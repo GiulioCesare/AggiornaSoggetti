@@ -120,6 +120,8 @@ IEI1010
 
 	int legamiInseriti = 0;
 	int legamiNonInseriti = 0;
+	int legamiGiaPresenti = 0;
+//	
 //	int legamiAggiornati = 0;
 	int titoli_da_legare=0;
 	int cancellaTuttiILegami=0;
@@ -150,8 +152,16 @@ IEI1010
 		}
 
 		try {
+				int pos = jdbcDriver.indexOf("sqlite"); // 29/07/2021
+				if (pos  != -1)
+				{
+					con = DriverManager.getConnection(connectionUrl);
+				}
+				else
+				{
+					con = DriverManager.getConnection(connectionUrl,userName, userPassword);
+				}
 
-				con = DriverManager.getConnection(connectionUrl,userName, userPassword);
 				boolean autoCommit = con.getAutoCommit();
 				con.setAutoCommit(false);
 				
@@ -163,7 +173,7 @@ IEI1010
 					e.printStackTrace();
 				}
 				// if (jdbcDriver.contains("postgres"))
-				int pos = jdbcDriver.indexOf("postgres"); // 09/12/2010
+				pos = jdbcDriver.indexOf("postgres"); // 09/12/2010
 				if (pos  != -1)
 				{
 					stmt.execute("SET search_path = sbnweb, pg_catalog, public");
@@ -321,6 +331,7 @@ private void caricaGerarchie()
 {
 	
 //	caricaGerarchieVecchie();
+//	if ( tb_gerarchia_soggetti != null && !Misc.emptyString(tb_gerarchia_soggetti))
 	caricaGerarchieNuove();
 	
 	
@@ -344,8 +355,9 @@ public static void main(String args[])
 //	logFileOut = args[2];
     
     String start=
-       "Inserisci Legami Titolo Soggetto tool - � Almaviva S.p.A 18/01/2017"+
-	 "\n=================================================";
+//     "Inserisci Legami Titolo Soggetto tool - � Almaviva S.p.A 18/01/2017"+
+     "Inserisci Legami Titolo Soggetto tool - � Almaviva S.p.A 06/08/2021\n"; // Fix per LO1 ** 
+	 
 
 
 //	System.out.println("inp: " + inputFile);
@@ -452,7 +464,7 @@ public static void main(String args[])
 
 		// Carichiamo le gerarchie di soggettazione dei poli
 		InserisciLegamiTitoloSoggettoJdbc.caricaGerarchie();
-//System.exit(1);		
+		
 		
 		
 		
@@ -541,13 +553,38 @@ private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
 	  // polo operante diverso da quello su DB cancella tutti i legami e reinserisci i propri
 		if (! ute_var_polo_operante.substring(0,6).equals(ute_var_DB)) // 26/02/21
 		{
-		// CANCELLIAMO LOGICAMENTE TUTTI I LEGAMI TITOLO-SOGGETTI
-		// ------------------------------------------------------
-		String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'S', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"'";
-		stmt.execute(updateStr);
-		int rowsAffected = stmt.getUpdateCount();
-		cancellaTuttiILegami++;
-        System.out.println("Cancello tutti i legami ("+rowsAffected+") titolo soggetto per polo operante: "+ute_var_polo_operante.substring(0, 6)+" diverso da polo DB: "+ute_var_DB);
+			String poloOP = ute_var_POLO.substring(0,3);
+			String poloDB = ute_var_DB.substring(0,3);
+			if (poloOP.equals(poloDB))
+			{
+				Integer priorita = prioritaMap.get(ute_var_DB.substring(0, 3)+" **");
+				if (priorita != null)   
+				{ // Stesso polo con biblioteche diverse ma tutte allo stesso livello (' **')
+				  // NON dobbiao cancellare i legami esistenti
+				}
+				else
+				{ // cancella legami esistenti
+					// CANCELLIAMO LOGICAMENTE TUTTI I LEGAMI TITOLO-SOGGETTI
+					// ------------------------------------------------------
+					String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'S', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"'";
+					stmt.execute(updateStr);
+					int rowsAffected = stmt.getUpdateCount();
+					cancellaTuttiILegami++;
+			        System.out.println("Cancello tutti i legami ("+rowsAffected+") titolo soggetto per polo operante: "+ute_var_polo_operante.substring(0, 6)+" diverso da polo DB: "+ute_var_DB);
+				}
+					
+			}
+			else
+			{ // cancella legami esistenti
+				// CANCELLIAMO LOGICAMENTE TUTTI I LEGAMI TITOLO-SOGGETTI
+				// ------------------------------------------------------
+				String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'S', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"'";
+				stmt.execute(updateStr);
+				int rowsAffected = stmt.getUpdateCount();
+				cancellaTuttiILegami++;
+		        System.out.println("Cancello tutti i legami ("+rowsAffected+") titolo soggetto per polo operante: "+ute_var_polo_operante.substring(0, 6)+" diverso da polo DB: "+ute_var_DB);
+				
+			}
 		}
 		//System.out.println("Legami cancellati logicamente="+rowsAffected);
 	// }
@@ -555,20 +592,14 @@ private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
 	
 	
 	// Proviamo ad INSERIRE il legame	
-	String insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
+	String insertStr;
 
-//	boolean retB =  stmt.execute(insertStr);
-//	if (retB == true)
-//	{
-//		System.out.println("Inserito legame: "+bid+"->"+cid);
-//		legamiInseriti++;
-//	}
-//	else
-//	{
-//		System.out.println("Inserito legame retB=FALSE: "+bid+"->"+cid);
-//		legamiInseriti++;
-//		
-//	}
+	int pos = jdbcDriver.indexOf("sqlite"); // 29/07/2021
+	if (pos != 1)
+		insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',CURRENT_TIMESTAMP,'"+ute_var_polo_operante+"',CURRENT_TIMESTAMP,'N')";
+	else
+		insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
+
 	
 	stmt.execute(insertStr);
 	System.out.println("Inserito legame: "+bid+"->"+cid);
@@ -580,16 +611,47 @@ private void inserisciLegame(Statement stmt, String ute_ins_polo_operante,
 	catch (Exception e) {
 		// Legame cancellato logicamente.
 		// RIPRISTINO IL LEGAME
-		String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'" ;
+		String updateStr;
+
+
+		ResultSet rs;
 		try {
-			stmt.execute(updateStr);
-			System.out.println("Inserito legame per ripristino: "+bid+"->"+cid);
-			legamiInseriti++;
+			rs = stmt.executeQuery("select fl_canc from tr_tit_sog where bid='"+bid+"' and cid = '"+cid+"'" );
+			if(rs.next())
+			{
+			String fl_canc = rs.getString(1);
+			if (fl_canc.equals("S"))
+				{
+				int pos = jdbcDriver.indexOf("sqlite"); // 29/07/2021
+				if (pos != 1)
+					updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = CURRENT_TIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'" ;
+				else
+					updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'" ;
+
+				try {
+					stmt.execute(updateStr);
+					System.out.println("Inserito legame per ripristino: "+bid+"->"+cid);
+					legamiInseriti++;
+					
+				} catch (SQLException e1) {
+					System.out.println("Errore in inserimento legame per ripristino: "+bid+"->"+cid);
+					legamiNonInseriti++;
+				}
+				}
+			else
+				{
+				System.out.println("Legame gia' presente : "+bid+"->"+cid);
+				legamiGiaPresenti++;
+				}
+				
+			}
 			
-		} catch (SQLException e1) {
-			System.out.println("Errore in inserimento legame per ripristino: "+bid+"->"+cid);
-			legamiNonInseriti++;
+		} catch (SQLException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
+
+
 //stmt.execute("COMMIT");										
 	}
 }
@@ -688,6 +750,11 @@ public void doInserisciLegami()
 						// continue;
 					// }
 					
+					if ( prioritaPoloOp == null)
+						prioritaPoloOp = prioritaMap.get(cdPoloBibliotecaStr.substring(0, 3)+" **");
+					
+					
+					
 					// 08/10/2019 Controlliamo che il titolo non sia stato cancellato
 					ResultSet rs = stmt.executeQuery("select bid from tb_titolo where bid='"+bid+"' and fl_canc != 'S'" );
 					if(!rs.next())
@@ -696,7 +763,6 @@ public void doInserisciLegami()
 						legamiNonInseriti++;
 						continue;
 					}
-					
 					
 					
 					// Facciamo i controlli di priorita'
@@ -840,45 +906,44 @@ public void doInserisciLegami()
 					}
 					else
 					{ // Primo Legame 
-						try
-						{
-							// INSERIAMO il primo legame	
-							String insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
-	
-//							boolean retB =  stmt.execute(insertStr);
-//							if (retB == true)
-//							{
-//								System.out.println("Inserito il primo legame: " +bid+"->"+cid);
-//								legamiInseriti++;
-//							}
+//						try
+//						{
+							String ute_var_DB = ute_ins_polo_operante;
+							inserisciLegame(stmt, ute_ins_polo_operante, ute_var_polo_operante, ute_var_DB, bid, cid);
+							
+//							// INSERIAMO il primo legame
+//							String insertStr;
+//	
+//							int pos = jdbcDriver.indexOf("sqlite"); // 29/07/2021
+//							if (pos != 1)
+//								insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',CURRENT_TIMESTAMP,'"+ute_var_polo_operante+"',CURRENT_TIMESTAMP,'N')";
 //							else
-//							{
-//								System.out.println("Inserito il primo legame retB=FALSE: " +bid+"->"+cid);
+//								insertStr = "insert into tr_tit_sog  values('"+bid+"','"+cid+"','"+ute_ins_polo_operante+"',SYSTIMESTAMP,'"+ute_var_polo_operante+"',SYSTIMESTAMP,'N')";
+//								
+//	
+//							stmt.execute(insertStr);
+//							System.out.println("Inserito il primo legame " +bid+"->"+cid);
+//							legamiInseriti++;
+//								
+//						}
+//						catch (Exception e) {
+//							// Legame cancellato logicamente.
+//							// Ripristino il legame
+//							String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'";
+//							try {
+////								boolean retB =  stmt.execute(updateStr);
+//								stmt.execute(updateStr);
+//								System.out.println("Inserito il primo legame per update: " +bid+"->"+cid);
 //								legamiInseriti++;
+//								
+//							} catch (SQLException e1) {
+//								System.out.println("Errore in inserimento " +bid+"->"+cid+" RIPRISTINO primo legame fallito");
+//								legamiNonInseriti++;
 //							}
-							stmt.execute(insertStr);
-							System.out.println("Inserito il primo legame " +bid+"->"+cid);
-							legamiInseriti++;
-								
-						}
-						catch (Exception e) {
-							// Legame cancellato logicamente.
-							// Ripristino il legame
-							String updateStr = "UPDATE Tr_tit_sog SET fl_canc = 'N', ute_var='"+ute_var_polo_operante+"', ts_var = SYSTIMESTAMP WHERE bid='"+bid+"' and cid='"+cid+"'";
-							try {
-//								boolean retB =  stmt.execute(updateStr);
-								stmt.execute(updateStr);
-								System.out.println("Inserito il primo legame per update: " +bid+"->"+cid);
-								legamiInseriti++;
-								
-							} catch (SQLException e1) {
-								System.out.println("Errore in inserimento " +bid+"->"+cid+" RIPRISTINO primo legame fallito");
-								legamiNonInseriti++;
-							}
-						}
+//						}
 						
 //stmt.execute("COMMIT");
-						
+					
 					}
 				
 				}
@@ -914,6 +979,7 @@ System.out.println("Committato a " + righeElaborate + " Righe elaborate");
 		System.out.println("Titoli da legare: " +titoli_da_legare );
 //		System.out.println("Legami aggiornati: " +legamiAggiornati );
 		System.out.println("Legami inseriti: " +legamiInseriti );
+		System.out.println("Legami gia' presenti: " +legamiGiaPresenti );
 		System.out.println("Legami NON inseriti: " +legamiNonInseriti );
 		System.out.println("Volte che sono stati cancellati tutti i legami: " + cancellaTuttiILegami);
 		
